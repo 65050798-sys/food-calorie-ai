@@ -2,7 +2,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // TEST PAGE
+    // ถ้าเข้าหน้าแรก ให้คืนค่าหน้าเว็บทดสอบที่คุณเขียนไว้ได้เลย
     if (url.pathname === "/" || url.pathname === "/index.html") {
       return new Response(
         `<!DOCTYPE html>
@@ -42,6 +42,11 @@ export default {
       );
     }
 
-    return new Response("Worker OK");
+    // สำคัญมาก: สำหรับไฟล์อื่นๆ หรือ asset ในโฟลเดอร์ ให้ส่งต่อไปที่ env.ASSETS เพื่อดึงไฟล์มาแสดง
+    try {
+      return await env.ASSETS.fetch(request);
+    } catch (e) {
+      return new Response("Not Found", { status: 404 });
+    }
   }
 };
