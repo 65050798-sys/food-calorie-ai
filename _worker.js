@@ -11,13 +11,11 @@ export default {
 
         if (!data.image) {
           return new Response(
-            JSON.stringify({
-              error: "ไม่พบรูปอาหาร"
-            }),
+            JSON.stringify({ error: "ไม่พบรูปอาหาร" }),
             {
               status: 400,
               headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json; charset=UTF-8"
               }
             }
           );
@@ -27,12 +25,10 @@ export default {
           "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
           {
             method: "POST",
-
             headers: {
               "Content-Type": "application/json",
               "x-goog-api-key": env.GEMINI_API_KEY
             },
-
             body: JSON.stringify({
               contents: [
                 {
@@ -47,7 +43,7 @@ export default {
                       text: `
 วิเคราะห์อาหารจากภาพนี้
 
-ให้ประเมิน:
+ประเมิน:
 - ชื่ออาหาร
 - ปริมาณโดยประมาณ
 - calories
@@ -55,7 +51,7 @@ export default {
 - carbohydrates
 - fat
 
-ถ้ามีอาหารหลายอย่างในภาพ ให้ประเมินรวมกัน
+ถ้ามีหลายอย่างในภาพ ให้ประเมินรวมกัน
 
 ตอบเป็น JSON เท่านั้น:
 
@@ -80,7 +76,6 @@ fat = g
                   ]
                 }
               ],
-
               generationConfig: {
                 responseMimeType: "application/json"
               }
@@ -99,7 +94,7 @@ fat = g
             {
               status: response.status,
               headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json; charset=UTF-8"
               }
             }
           );
@@ -116,7 +111,7 @@ fat = g
             {
               status: 500,
               headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json; charset=UTF-8"
               }
             }
           );
@@ -129,7 +124,7 @@ fat = g
           {
             status: 200,
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json; charset=UTF-8"
             }
           }
         );
@@ -143,7 +138,7 @@ fat = g
           {
             status: 500,
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json; charset=UTF-8"
             }
           }
         );
@@ -151,9 +146,8 @@ fat = g
     }
 
     // =========================
-    // Static Website
+    // Website
     // =========================
-
     return env.ASSETS.fetch(request);
   }
 };
