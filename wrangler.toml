@@ -1,3 +1,9 @@
-name = "food-calorie-ai"
-pages_build_output_dir = "."
+name = "food-calorie-ai-app"
+main = "_worker.js"
 compatibility_date = "2026-10-01"
+
+[assets]
+directory = "."
+binding = "ASSETS"
+
+[previews]
