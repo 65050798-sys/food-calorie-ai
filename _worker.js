@@ -1,52 +1,76 @@
 export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
+  async fetch(request, env, ctx) {
+    // จัดการ CORS ถ้าจำเป็น
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      });
+    }
 
-    // ถ้าเข้าหน้าแรก ให้คืนค่าหน้าเว็บทดสอบที่คุณเขียนไว้ได้เลย
-    if (url.pathname === "/" || url.pathname === "/index.html") {
-      return new Response(
-        `<!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width">
-          <title>FoodLens AI Test</title>
-        </head>
-        <body style="
-          margin:0;
-          min-height:100vh;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          background:#071c17;
-          color:white;
-          font-family:Arial,sans-serif;
-          text-align:center;
-        ">
-          <div>
-            <div style="font-size:60px">✅</div>
-            <h1>Worker ทำงานแล้ว</h1>
-            <p>Cloudflare Worker สามารถตอบหน้าเว็บได้</p>
-            <p style="color:#8faaa2">
-              ขั้นต่อไปจะเชื่อม FoodLens AI กลับเข้าไป
-            </p>
-          </div>
-        </body>
-        </html>`,
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "text/html; charset=UTF-8"
-          }
+    if (request.method === "POST" && new URL(request.url).pathname === "/analyze") {
+      try {
+        const formData = await request.formData();
+        const imageFile = formData.get("image");
+
+        if (!imageFile) {
+          return Response.json({ success: false, error: "ไม่พบไฟล์รูปภาพ" }, { status: 400 });
         }
-      );
+
+        // แปลงรูปภาพเป็น ArrayBuffer -> Base64
+        const arrayBuffer = await imageFile.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = "";
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        const base64Image = btoa(binary);
+        const mimeType = imageFile.type || "image/jpeg";
+
+        // เรียกใช้งาน Gemini API (ผ่าน Google Generative AI หรือ REST API ตรง)
+        const geminiApiKey = env.GEMINI_API_KEY; // ตั้งค่า Secret ใน Cloudflare Dashboard
+        const promptText = "วิเคราะห์รูปภาพอาหารนี้ บอกชื่อเมนู, พลังงานรวม (kcal) โดยประมาณ และรายละเอียดสารอาหาร (โปรตีน, คาร์โบไฮเดรต, ไขมัน) เป็นภาษาไทย จัดรูปแบบให้อ่านง่าย";
+
+        const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: promptText },
+                {
+                  inline_data: {
+                    mime_type: mimeType,
+                    data: base64Image
+                  }
+                }
+              ]
+            }]
+          })
+        });
+
+        const aiResult = await apiResponse.json();
+        const textOutput = aiResult.candidates?.[0]?.content?.parts?.[0]?.text || "ไม่สามารถวิเคราะห์ผลลัพธ์ได้";
+
+        return Response.json({
+          success: true,
+          menuName: "เมนูอาหารจากภาพ",
+          calories: "คำนวณจาก AI ด้านล่าง",
+          details: textOutput
+        }, {
+          headers: { "Access-Control-Allow-Origin": "*" }
+        });
+
+      } catch (err) {
+        return Response.json({ success: false, error: err.message }, {
+          headers: { "Access-Control-Allow-Origin": "*" }
+        });
+      }
     }
 
-    // สำคัญมาก: สำหรับไฟล์อื่นๆ หรือ asset ในโฟลเดอร์ ให้ส่งต่อไปที่ env.ASSETS เพื่อดึงไฟล์มาแสดง
-    try {
-      return await env.ASSETS.fetch(request);
-    } catch (e) {
-      return new Response("Not Found", { status: 404 });
-    }
-  }
+    return new Response("FoodLens AI Backend Running", { status: 200 });
+  },
 };
