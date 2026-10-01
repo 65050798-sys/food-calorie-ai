@@ -3,435 +3,193 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Food Calorie AI</title>
-
+  <title>FoodLens AI - ตรวจสอบแคลอรีอาหารด้วย AI</title>
   <style>
+    :root {
+      --primary: #ff6b35;
+      --primary-hover: #e85a24;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --text-main: #2d3748;
+      --text-muted: #718096;
+      --border-color: #e2e8f0;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
 
     body {
-      font-family: Arial, sans-serif;
-      background: #f7f5ee;
-      color: #203d35;
+      background-color: var(--bg-color);
+      color: var(--text-main);
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
     }
 
     .container {
-      max-width: 600px;
-      margin: auto;
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border-radius: 24px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
       padding: 30px 20px;
-    }
-
-    .header {
       text-align: center;
-      margin-bottom: 30px;
+      margin-top: 20px;
     }
 
-    .logo {
+    .header-icon {
       font-size: 48px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     h1 {
-      font-size: 32px;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-main);
       margin-bottom: 8px;
     }
 
-    .subtitle {
-      color: #66756f;
-      font-size: 16px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 24px;
-      padding: 25px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    p.subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
     }
 
     .upload-box {
-      border: 2px dashed #b7d6cc;
-      border-radius: 20px;
-      padding: 45px 20px;
-      text-align: center;
+      border: 2px dashed var(--border-color);
+      border-radius: 16px;
+      padding: 30px 20px;
+      background: #fafbfc;
       cursor: pointer;
-      transition: 0.2s;
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+      position: relative;
     }
 
     .upload-box:hover {
-      background: #f5fbf8;
+      border-color: var(--primary);
+      background: #fffaf7;
     }
 
-    .camera {
-      font-size: 55px;
-      margin-bottom: 15px;
-    }
-
-    .upload-title {
-      font-size: 20px;
-      font-weight: bold;
-      margin-bottom: 8px;
+    .upload-icon {
+      font-size: 40px;
+      margin-bottom: 10px;
     }
 
     .upload-text {
-      color: #78857f;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .upload-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ซ่อน input file แท้จริง แต่ให้กดผ่านกล่องได้ */
+    #fileInput {
+      display: none;
+    }
+
+    .btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      width: 100%;
+      cursor: pointer;
+      transition: background 0.2s;
+      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    /* ส่วนแสดงตัวอย่างรูปภาพที่เลือก */
+    #previewContainer {
+      display: none;
       margin-bottom: 20px;
     }
 
-    input[type="file"] {
-      display: none;
-    }
-
-    .button {
-      display: inline-block;
-      background: #e66f43;
-      color: white;
-      padding: 13px 24px;
+    #imagePreview {
+      max-width: 100%;
+      max-height: 250px;
       border-radius: 12px;
-      font-weight: bold;
-      cursor: pointer;
+      object-fit: contain;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
 
-    #preview {
-      width: 100%;
-      max-height: 350px;
-      object-fit: cover;
-      border-radius: 18px;
-      margin-top: 20px;
-      display: none;
-    }
-
-    .analyze-btn {
-      width: 100%;
-      border: none;
-      margin-top: 20px;
-      padding: 16px;
-      border-radius: 14px;
-      background: #203d35;
-      color: white;
-      font-size: 17px;
-      font-weight: bold;
-      cursor: pointer;
-      display: none;
-    }
-
-    .result {
-      margin-top: 25px;
-      display: none;
-    }
-
-    .result h2 {
-      margin-bottom: 15px;
-    }
-
-    .nutrition {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .nutrition-item {
-      background: #f4f8f5;
-      border-radius: 15px;
-      padding: 18px;
+    footer {
+      margin-top: 30px;
+      font-size: 12px;
+      color: var(--text-muted);
       text-align: center;
-    }
-
-    .nutrition-item .icon {
-      font-size: 25px;
-    }
-
-    .nutrition-item strong {
-      display: block;
-      font-size: 20px;
-      margin-top: 5px;
-    }
-
-    .warning {
-      margin-top: 20px;
-      padding: 15px;
-      border-radius: 12px;
-      background: #fff7df;
-      color: #75632e;
-      font-size: 13px;
-      line-height: 1.5;
     }
   </style>
 </head>
-
 <body>
 
   <div class="container">
+    <div class="header-icon">🥗</div>
+    <h1>FoodLens AI</h1>
+    <p class="subtitle">ถ่ายรูปหรือเลือกรูปอาหาร เพื่อให้ AI ช่วยวิเคราะห์แคลอรีและโภชนาการ</p>
 
-    <div class="header">
-      <div class="logo">🍽️</div>
-      <h1>Food Calorie AI</h1>
-      <p class="subtitle">
-        ถ่ายรูปอาหาร แล้วให้ AI ช่วยประเมินโภชนาการ
-      </p>
+    <!-- พื้นสำหรับคลิกเพื่อเลือกรูป -->
+    <div class="upload-box" onclick="document.getElementById('fileInput').click();">
+      <div class="upload-icon">📷</div>
+      <div class="upload-text">แตะเพื่อเลือกรูปภาพอาหาร</div>
+      <div class="upload-hint">รองรับไฟล์ JPG, PNG, HEIC</div>
     </div>
 
-    <div class="card">
+    <!-- ฟอร์มเลือกไฟล์จากอุปกรณ์ (เปิดกล้องหรือคลังภาพได้) -->
+    <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="previewImage(event)">
 
-      <label class="upload-box" for="foodImage">
-
-        <div class="camera">📷</div>
-
-        <div class="upload-title">
-          ถ่ายรูปหรือเลือกรูปอาหาร
-        </div>
-
-        <div class="upload-text">
-          AI จะช่วยวิเคราะห์อาหารในภาพ
-        </div>
-
-        <span class="button">
-          เลือกรูปอาหาร
-        </span>
-
-      </label>
-
-      <input
-        id="foodImage"
-        type="file"
-        accept="image/*"
-        capture="environment"
-      >
-
-      <img id="preview" alt="Food preview">
-
-      <button class="analyze-btn" id="analyzeBtn">
-        🤖 วิเคราะห์อาหาร
-      </button>
-
-      <div class="result" id="result">
-
-        <h2>🍛 ผลการวิเคราะห์</h2>
-
-        <p id="foodName">
-          ยังไม่ได้วิเคราะห์
-        </p>
-
-        <div class="nutrition">
-
-          <div class="nutrition-item">
-            <div class="icon">🔥</div>
-            <span>Calories</span>
-            <strong id="calories">-</strong>
-          </div>
-
-          <div class="nutrition-item">
-            <div class="icon">💪</div>
-            <span>Protein</span>
-            <strong id="protein">-</strong>
-          </div>
-
-          <div class="nutrition-item">
-            <div class="icon">🍚</div>
-            <span>Carbs</span>
-            <strong id="carbs">-</strong>
-          </div>
-
-          <div class="nutrition-item">
-            <div class="icon">🥑</div>
-            <span>Fat</span>
-            <strong id="fat">-</strong>
-          </div>
-
-        </div>
-
-        <div class="warning">
-          ⚠️ ค่าทางโภชนาการเป็นการประมาณจากภาพ
-          อาจมีความคลาดเคลื่อนจากปริมาณอาหาร
-          ส่วนผสม วิธีปรุง และขนาดของอาหารจริง
-        </div>
-
-      </div>
-
+    <!-- ส่วนแสดงรูปที่เลือก -->
+    <div id="previewContainer">
+      <img id="imagePreview" src="" alt="Preview">
     </div>
 
+    <button class="btn" id="analyzeBtn" style="display: none;" onclick="analyzeFood()">เริ่มวิเคราะห์อาหาร</button>
   </div>
 
+  <footer>
+    &copy; 2026 FoodLens AI. All rights reserved.
+  </footer>
+
   <script>
-  const foodImage = document.getElementById("foodImage");
-  const preview = document.getElementById("preview");
-  const analyzeBtn = document.getElementById("analyzeBtn");
-
-  const result = document.getElementById("result");
-  const foodName = document.getElementById("foodName");
-  const calories = document.getElementById("calories");
-  const protein = document.getElementById("protein");
-  const carbs = document.getElementById("carbs");
-  const fat = document.getElementById("fat");
-
-  let selectedFile = null;
-
-  // เมื่อเลือกรูป
-  foodImage.addEventListener("change", function () {
-
-    const file = this.files[0];
-
-    if (!file) return;
-
-    selectedFile = file;
-
-    const imageURL = URL.createObjectURL(file);
-
-    preview.src = imageURL;
-    preview.style.display = "block";
-
-    analyzeBtn.style.display = "block";
-
-    result.style.display = "none";
-
-  });
-
-
-  // เมื่อกดปุ่มวิเคราะห์
-  analyzeBtn.addEventListener("click", async function () {
-
-    if (!selectedFile) {
-      alert("กรุณาเลือกรูปอาหารก่อน");
-      return;
-    }
-
-    // เปลี่ยนปุ่มเป็นสถานะกำลังวิเคราะห์
-    analyzeBtn.disabled = true;
-    analyzeBtn.textContent = "🤖 กำลังวิเคราะห์...";
-
-    result.style.display = "block";
-
-    foodName.textContent = "กำลังให้ AI วิเคราะห์...";
-    calories.textContent = "-";
-    protein.textContent = "-";
-    carbs.textContent = "-";
-    fat.textContent = "-";
-
-
-    try {
-
-      // แปลงรูปเป็น Base64
-      const base64Image = await fileToBase64(selectedFile);
-
-      // ส่งข้อมูลไป Cloudflare Worker
-      const response = await fetch("/api/analyze", {
-
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({
-          image: base64Image,
-          mimeType: selectedFile.type
-        })
-
-      });
-
-
-      const data = await response.json();
-
-
-      // ถ้า API มี error
-      if (!response.ok || data.error) {
-
-        console.error(data);
-
-        throw new Error(
-          data.error || "ไม่สามารถวิเคราะห์อาหารได้"
-        );
-
+    function previewImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const preview = document.getElementById('imagePreview');
+          preview.src = e.target.result;
+          
+          // แสดงพรีวิวและปุ่มวิเคราะห์
+          document.getElementById('previewContainer').style.display = 'block';
+          document.getElementById('analyzeBtn').style.display = 'block';
+        }
+        reader.readAsDataURL(file);
       }
-
-
-      // แสดงผล AI
-      foodName.textContent =
-        data.foodName || "ไม่ทราบชื่ออาหาร";
-
-      calories.textContent =
-        data.calories !== undefined
-          ? `${data.calories} kcal`
-          : "-";
-
-      protein.textContent =
-        data.protein !== undefined
-          ? `${data.protein} g`
-          : "-";
-
-      carbs.textContent =
-        data.carbs !== undefined
-          ? `${data.carbs} g`
-          : "-";
-
-      fat.textContent =
-        data.fat !== undefined
-          ? `${data.fat} g`
-          : "-";
-
-
-    } catch (error) {
-
-      console.error(error);
-
-      foodName.textContent =
-        "เกิดข้อผิดพลาดในการวิเคราะห์";
-
-      calories.textContent = "-";
-      protein.textContent = "-";
-      carbs.textContent = "-";
-      fat.textContent = "-";
-
-      alert(
-        "ไม่สามารถวิเคราะห์อาหารได้\n\n" +
-        error.message
-      );
-
-    } finally {
-
-      analyzeBtn.disabled = false;
-      analyzeBtn.textContent = "🤖 วิเคราะห์อาหาร";
-
     }
 
-  });
+    function analyzeFood() {
+      alert("ระบบกำลังส่งรูปภาพให้ AI วิเคราะห์โภชนาการ... (สามารถเชื่อมต่อ API ต่อในขั้นตอนนี้ได้เลยครับ)");
+    }
+  </script>
 
-
-  // แปลงไฟล์รูปเป็น Base64
-  function fileToBase64(file) {
-
-    return new Promise((resolve, reject) => {
-
-      const reader = new FileReader();
-
-      reader.onload = () => {
-
-        // reader.result จะมีรูปแบบ:
-        // data:image/jpeg;base64,XXXXXX
-
-        // เราต้องเอาเฉพาะส่วน Base64
-        const base64 = reader.result.split(",")[1];
-
-        resolve(base64);
-
-      };
-
-      reader.onerror = () => {
-        reject(
-          new Error("ไม่สามารถอ่านไฟล์รูปได้")
-        );
-      };
-
-      reader.readAsDataURL(file);
-
-    });
-
-  }
-
-    </script>
 </body>
 </html>
