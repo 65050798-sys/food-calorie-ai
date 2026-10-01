@@ -27,10 +27,12 @@ export default {
           "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
           {
             method: "POST",
+
             headers: {
               "Content-Type": "application/json",
               "x-goog-api-key": env.GEMINI_API_KEY
             },
+
             body: JSON.stringify({
               contents: [
                 {
@@ -78,6 +80,7 @@ fat = g
                   ]
                 }
               ],
+
               generationConfig: {
                 responseMimeType: "application/json"
               }
@@ -132,7 +135,6 @@ fat = g
         );
 
       } catch (error) {
-
         return new Response(
           JSON.stringify({
             error: "เกิดข้อผิดพลาดในการวิเคราะห์",
@@ -149,14 +151,9 @@ fat = g
     }
 
     // =========================
-    // หน้าเว็บ
+    // Static Website
     // =========================
 
-    const assetRequest = new Request(
-      new URL("/index.html", request.url),
-      request
-    );
-
-    return env.ASSETS.fetch(assetRequest);
+    return env.ASSETS.fetch(request);
   }
 };
