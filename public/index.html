@@ -3,268 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FoodLens AI - ตรวจสอบแคลอรีอาหารด้วย AI</title>
+  <title>FoodLens AI - ตรวจสอบแคลอรี</title>
   <style>
-    :root {
-      --primary: #ff6b35;
-      --primary-hover: #e85a24;
-      --bg-color: #f8f9fa;
-      --card-bg: #ffffff;
-      --text-main: #2d3748;
-      --text-muted: #718096;
-      --border-color: #e2e8f0;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 480px;
-      background: var(--card-bg);
-      border-radius: 24px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-      padding: 30px 20px;
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    .header-icon { font-size: 48px; margin-bottom: 12px; }
-    h1 { font-size: 24px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
-    p.subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; }
-
-    .api-box {
-      margin-bottom: 20px;
-      text-align: left;
-    }
-    .api-box label { font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 5px; }
-    .api-box input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      font-size: 14px;
-    }
-
-    .button-group {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .action-btn {
-      background-color: #ffffff;
-      color: var(--text-main);
-      border: 2px solid var(--border-color);
-      border-radius: 16px;
-      padding: 16px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition: all 0.2s ease;
-      width: 100%;
-    }
-
-    .action-btn:hover { border-color: var(--primary); background-color: #fffaf7; }
-    .action-btn.primary {
-      background-color: var(--primary);
-      color: white;
-      border-color: var(--primary);
-      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
-    }
-    .action-btn.primary:hover { background-color: var(--primary-hover); }
-
-    input[type="file"] { display: none; }
-
-    #previewContainer { display: none; margin-bottom: 20px; }
-    #imagePreview {
-      max-width: 100%;
-      max-height: 280px;
-      border-radius: 16px;
-      object-fit: contain;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      margin-bottom: 15px;
-    }
-
-    #resultContainer {
-      display: none;
-      text-align: left;
-      background: #fffaf7;
-      border: 1px solid #fed7d7;
-      border-radius: 16px;
-      padding: 20px;
-      margin-top: 20px;
-    }
-
-    .loading { display: none; margin: 20px 0; font-weight: 600; color: var(--primary); }
-    footer { margin-top: 30px; font-size: 12px; color: var(--text-muted); text-align: center; }
+    body { font-family: sans-serif; background: #f8f9fa; display: flex; justify-content: center; padding: 20px; margin: 0; }
+    .card { background: white; padding: 24px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; }
+    input, button { width: 100%; padding: 12px; margin-top: 10px; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
+    button { background: #ff6b35; color: white; border: none; font-weight: bold; cursor: pointer; }
+    button:hover { background: #e85a24; }
+    #preview { max-width: 100%; border-radius: 12px; margin-top: 15px; display: none; }
+    #result { text-align: left; margin-top: 15px; background: #fffaf7; padding: 15px; border-radius: 12px; display: none; font-size: 14px; line-height: 1.5; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <div class="header-icon">🥗</div>
-    <h1>FoodLens AI</h1>
-    <p class="subtitle">ถ่ายรูปหรือเลือกรูปอาหารเพื่อวิเคราะห์แคลอรีด้วย AI</p>
+<div class="card">
+  <h2>🥗 FoodLens AI</h2>
+  <p style="color: #666; font-size: 14px;">วิเคราะห์แคลอรีอาหารจากรูปภาพ</p>
 
-    <!-- ช่องใส่ API Key ชั่วคราวบนหน้าเว็บเพื่อให้ใช้งานได้ทันที -->
-    <div class="api-box">
-      <label for="apiKeyInput">Gemini API Key:</label>
-      <input type="password" id="apiKeyInput" placeholder="วาง API Key ที่นี่..." value="">
-    </div>
-
-    <div class="button-group" id="selectionGroup">
-      <button class="action-btn" onclick="document.getElementById('galleryInput').click();">
-        📁 เลือกรูปจากคลังภาพ / อุปกรณ์
-      </button>
-      <button class="action-btn" onclick="document.getElementById('cameraInput').click();">
-        📷 ถ่ายรูปอาหารใหม่
-      </button>
-    </div>
-
-    <input type="file" id="galleryInput" accept="image/*" onchange="handleImageSelect(event)">
-    <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleImageSelect(event)">
-
-    <div id="previewContainer">
-      <img id="imagePreview" alt="Preview">
-      <div id="loadingIndicator" class="loading">⏳ กำลังให้ AI วิเคราะห์โภชนาการ... กรุณารอสักครู่</div>
-      
-      <div id="actionButtons">
-        <button class="action-btn primary" onclick="analyzeFoodWithGeminiDirectly()">
-          ✨ เริ่มวิเคราะห์อาหารด้วย AI
-        </button>
-        <button class="action-btn" style="margin-top: 8px; font-size: 14px; padding: 12px;" onclick="resetForm()">
-          🔄 เลือกรูปใหม่
-        </button>
-      </div>
-    </div>
-
-    <div id="resultContainer">
-      <h3 style="color: var(--primary); margin-bottom: 10px;">📊 ผลการวิเคราะห์โภชนาการ</h3>
-      <div id="resultContent" style="font-size: 14px; line-height: 1.6; color: var(--text-main);"></div>
-      <button class="action-btn" style="margin-top: 15px; font-size: 14px; padding: 10px;" onclick="resetForm()">
-        🔍 วิเคราะห์รูปอื่นต่อ
-      </button>
-    </div>
+  <div style="text-align: left; margin-top: 15px;">
+    <label style="font-size: 12px; font-weight: bold; color: #666;">Gemini API Key:</label>
+    <input type="password" id="apiKey" placeholder="วาง API Key ของคุณที่นี่">
   </div>
 
-  <footer>
-    &copy; 2026 FoodLens AI. All rights reserved.
-  </footer>
+  <input type="file" id="imageInput" accept="image/*" style="margin-top: 15px;" onchange="previewImage(event)">
+  
+  <img id="preview" alt="Preview">
+  
+  <button onclick="analyzeImage()" style="margin-top: 15px;">✨ วิเคราะห์อาหาร</button>
 
-  <script>
-    let selectedFile = null;
-    let base64Imagedata = null;
+  <div id="loading" style="display:none; margin-top: 15px; color: #ff6b35; font-weight: bold;">⏳ กำลังให้ AI วิเคราะห์...</div>
+  <div id="result"></div>
+</div>
 
-    function handleImageSelect(event) {
-      const file = event.target.files[0];
-      if (file) {
-        selectedFile = file;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('imagePreview').src = e.target.result;
-          // ตัดเอาเฉพาะ Base64 string ด้านหลัง
-          base64Imagedata = e.target.result.split(',')[1];
-          
-          document.getElementById('selectionGroup').style.display = 'none';
-          document.getElementById('previewContainer').style.display = 'block';
-          document.getElementById('resultContainer').style.display = 'none';
-        }
-        reader.readAsDataURL(file);
+<script>
+  let base64Image = "";
+  let mimeType = "image/jpeg";
+
+  function previewImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+      mimeType = file.type;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('preview').src = e.target.result;
+        document.getElementById('preview').style.display = 'block';
+        base64Image = e.target.result.split(',')[1];
       }
+      reader.readAsDataURL(file);
+    }
+  }
+
+  async function analyzeImage() {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    if (!apiKey) {
+      alert("กรุณากรอก Gemini API Key ก่อนครับ");
+      return;
+    }
+    if (!base64Image) {
+      alert("กรุณาเลือกรูปภาพอาหารก่อนครับ");
+      return;
     }
 
-    function resetForm() {
-      selectedFile = null;
-      base64Imagedata = null;
-      document.getElementById('galleryInput').value = '';
-      document.getElementById('cameraInput').value = '';
-      document.getElementById('previewContainer').style.display = 'none';
-      document.getElementById('resultContainer').style.display = 'none';
-      document.getElementById('selectionGroup').style.display = 'flex';
-      document.getElementById('loadingIndicator').style.display = 'none';
-      document.getElementById('actionButtons').style.display = 'block';
-    }
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('result').style.display = 'none';
 
-    async function analyzeFoodWithGeminiDirectly() {
-      const apiKey = document.getElementById('apiKeyInput').value.trim();
-      if (!apiKey) {
-        alert("กรุณากรอก Gemini API Key ในช่องด้านบนก่อนครับ");
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: "วิเคราะห์รูปภาพอาหารนี้ บอกชื่อเมนู, พลังงานรวม (kcal) โดยประมาณ และรายละเอียดสารอาหาร (โปรตีน, คาร์โบไฮเดรต, ไขมัน) เป็นภาษาไทย จัดรูปแบบให้อ่านง่าย" },
+              { inline_data: { mime_type: mimeType, data: base64Image } }
+            ]
+          }]
+        })
+      });
+
+      const data = await response.json();
+      document.getElementById('loading').style.display = 'none';
+
+      if (data.error) {
+        alert("Error: " + data.error.message);
         return;
       }
-      if (!base64Imagedata) {
-        alert("กรุณาเลือกรูปภาพก่อนครับ");
-        return;
-      }
 
-      document.getElementById('actionButtons').style.display = 'none';
-      document.getElementById('loadingIndicator').style.display = 'block';
+      const outputText = data.candidates?.[0]?.content?.parts?.[0]?.text || "ไม่พบผลลัพธ์";
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = "<b>📊 ผลการวิเคราะห์:</b><br>" + outputText.replace(/\n/g, '<br>');
+      resultDiv.style.display = 'block';
 
-      const promptText = "วิเคราะห์รูปภาพอาหารนี้ บอกชื่อเมนู, พลังงานรวม (kcal) โดยประมาณ และรายละเอียดสารอาหาร (โปรตีน, คาร์โบไฮเดรต, ไขมัน) เป็นภาษาไทย จัดรูปแบบให้อ่านง่าย";
-
-      try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: promptText },
-                {
-                  inline_data: {
-                    mime_type: selectedFile.type || "image/jpeg",
-                    data: base64Imagedata
-                  }
-                }
-              ]
-            }]
-          })
-        });
-
-        const data = await response.json();
-        document.getElementById('loadingIndicator').style.display = 'none';
-        document.getElementById('previewContainer').style.display = 'none';
-
-        if (data.error) {
-          alert("เกิดข้อผิดพลาดจาก Gemini: " + data.error.message);
-          document.getElementById('actionButtons').style.display = 'block';
-          document.getElementById('previewContainer').style.display = 'block';
-          return;
-        }
-
-        const textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text || "ไม่พบผลลัพธ์จาก AI";
-        
-        document.getElementById('resultContent').innerHTML = textOutput.replace(/\n/g, '<br>');
-        document.getElementById('resultContainer').style.display = 'block';
-
-      } catch (error) {
-        document.getElementById('loadingIndicator').style.display = 'none';
-        document.getElementById('actionButtons').style.display = 'block';
-        document.getElementById('previewContainer').style.display = 'block';
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + error.message);
-      }
+    } catch (err) {
+      document.getElementById('loading').style.display = 'none';
+      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + err.message);
     }
-  </script>
+  }
+</script>
 
 </body>
 </html>
