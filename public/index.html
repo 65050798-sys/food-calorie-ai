@@ -19,7 +19,7 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
     body {
@@ -44,22 +44,21 @@
       margin-top: 20px;
     }
 
-    .header-icon {
-      font-size: 48px;
-      margin-bottom: 12px;
-    }
+    .header-icon { font-size: 48px; margin-bottom: 12px; }
+    h1 { font-size: 24px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
+    p.subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; }
 
-    h1 {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text-main);
-      margin-bottom: 8px;
+    .api-box {
+      margin-bottom: 20px;
+      text-align: left;
     }
-
-    p.subtitle {
+    .api-box label { font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 5px; }
+    .api-box input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
       font-size: 14px;
-      color: var(--text-muted);
-      margin-bottom: 24px;
     }
 
     .button-group {
@@ -83,35 +82,21 @@
       justify-content: center;
       gap: 10px;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
       width: 100%;
     }
 
-    .action-btn:hover {
-      border-color: var(--primary);
-      background-color: #fffaf7;
-    }
-
+    .action-btn:hover { border-color: var(--primary); background-color: #fffaf7; }
     .action-btn.primary {
       background-color: var(--primary);
       color: white;
       border-color: var(--primary);
       box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
     }
+    .action-btn.primary:hover { background-color: var(--primary-hover); }
 
-    .action-btn.primary:hover {
-      background-color: var(--primary-hover);
-    }
+    input[type="file"] { display: none; }
 
-    input[type="file"] {
-      display: none;
-    }
-
-    #previewContainer {
-      display: none;
-      margin-bottom: 20px;
-    }
-
+    #previewContainer { display: none; margin-bottom: 20px; }
     #imagePreview {
       max-width: 100%;
       max-height: 280px;
@@ -121,7 +106,6 @@
       margin-bottom: 15px;
     }
 
-    /* กล่องแสดงผลลัพธ์จาก AI */
     #resultContainer {
       display: none;
       text-align: left;
@@ -132,25 +116,8 @@
       margin-top: 20px;
     }
 
-    #resultContainer h3 {
-      color: var(--primary);
-      margin-bottom: 10px;
-      font-size: 18px;
-    }
-
-    .loading {
-      display: none;
-      margin: 20px 0;
-      font-weight: 600;
-      color: var(--primary);
-    }
-
-    footer {
-      margin-top: 30px;
-      font-size: 12px;
-      color: var(--text-muted);
-      text-align: center;
-    }
+    .loading { display: none; margin: 20px 0; font-weight: 600; color: var(--primary); }
+    footer { margin-top: 30px; font-size: 12px; color: var(--text-muted); text-align: center; }
   </style>
 </head>
 <body>
@@ -158,9 +125,14 @@
   <div class="container">
     <div class="header-icon">🥗</div>
     <h1>FoodLens AI</h1>
-    <p class="subtitle">ถ่ายรูปหรือเลือกรูปอาหารเพื่อวิเคราะห์แคลอรีและโภชนาการ</p>
+    <p class="subtitle">ถ่ายรูปหรือเลือกรูปอาหารเพื่อวิเคราะห์แคลอรีด้วย AI</p>
 
-    <!-- ปุ่มเลือกรูป -->
+    <!-- ช่องใส่ API Key ชั่วคราวบนหน้าเว็บเพื่อให้ใช้งานได้ทันที -->
+    <div class="api-box">
+      <label for="apiKeyInput">Gemini API Key:</label>
+      <input type="password" id="apiKeyInput" placeholder="วาง API Key ที่นี่..." value="">
+    </div>
+
     <div class="button-group" id="selectionGroup">
       <button class="action-btn" onclick="document.getElementById('galleryInput').click();">
         📁 เลือกรูปจากคลังภาพ / อุปกรณ์
@@ -173,14 +145,12 @@
     <input type="file" id="galleryInput" accept="image/*" onchange="handleImageSelect(event)">
     <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleImageSelect(event)">
 
-    <!-- ส่วนแสดงรูปและปุ่มวิเคราะห์ -->
     <div id="previewContainer">
-      <img id="imagePreview" src="" alt="Preview">
+      <img id="imagePreview" alt="Preview">
+      <div id="loadingIndicator" class="loading">⏳ กำลังให้ AI วิเคราะห์โภชนาการ... กรุณารอสักครู่</div>
       
-      <div id="loadingIndicator" class="loading">⏳ กำลังให้ AI วิเคราะห์สารอาหาร... กรุณารอสักครู่</div>
-
       <div id="actionButtons">
-        <button class="action-btn primary" onclick="analyzeFood()">
+        <button class="action-btn primary" onclick="analyzeFoodWithGeminiDirectly()">
           ✨ เริ่มวิเคราะห์อาหารด้วย AI
         </button>
         <button class="action-btn" style="margin-top: 8px; font-size: 14px; padding: 12px;" onclick="resetForm()">
@@ -189,9 +159,8 @@
       </div>
     </div>
 
-    <!-- ส่วนแสดงผลลัพธ์ -->
     <div id="resultContainer">
-      <h3>📊 ผลการวิเคราะห์โภชนาการ</h3>
+      <h3 style="color: var(--primary); margin-bottom: 10px;">📊 ผลการวิเคราะห์โภชนาการ</h3>
       <div id="resultContent" style="font-size: 14px; line-height: 1.6; color: var(--text-main);"></div>
       <button class="action-btn" style="margin-top: 15px; font-size: 14px; padding: 10px;" onclick="resetForm()">
         🔍 วิเคราะห์รูปอื่นต่อ
@@ -205,6 +174,7 @@
 
   <script>
     let selectedFile = null;
+    let base64Imagedata = null;
 
     function handleImageSelect(event) {
       const file = event.target.files[0];
@@ -213,6 +183,9 @@
         const reader = new FileReader();
         reader.onload = function(e) {
           document.getElementById('imagePreview').src = e.target.result;
+          // ตัดเอาเฉพาะ Base64 string ด้านหลัง
+          base64Imagedata = e.target.result.split(',')[1];
+          
           document.getElementById('selectionGroup').style.display = 'none';
           document.getElementById('previewContainer').style.display = 'block';
           document.getElementById('resultContainer').style.display = 'none';
@@ -223,6 +196,7 @@
 
     function resetForm() {
       selectedFile = null;
+      base64Imagedata = null;
       document.getElementById('galleryInput').value = '';
       document.getElementById('cameraInput').value = '';
       document.getElementById('previewContainer').style.display = 'none';
@@ -232,50 +206,62 @@
       document.getElementById('actionButtons').style.display = 'block';
     }
 
-    async function analyzeFood() {
-      if (!selectedFile) {
+    async function analyzeFoodWithGeminiDirectly() {
+      const apiKey = document.getElementById('apiKeyInput').value.trim();
+      if (!apiKey) {
+        alert("กรุณากรอก Gemini API Key ในช่องด้านบนก่อนครับ");
+        return;
+      }
+      if (!base64Imagedata) {
         alert("กรุณาเลือกรูปภาพก่อนครับ");
         return;
       }
 
-      // ซ่อนปุ่มกระทำ และแสดงสถานะกำลังโหลด
       document.getElementById('actionButtons').style.display = 'none';
       document.getElementById('loadingIndicator').style.display = 'block';
 
-      const formData = new FormData();
-      formData.append('image', selectedFile);
+      const promptText = "วิเคราะห์รูปภาพอาหารนี้ บอกชื่อเมนู, พลังงานรวม (kcal) โดยประมาณ และรายละเอียดสารอาหาร (โปรตีน, คาร์โบไฮเดรต, ไขมัน) เป็นภาษาไทย จัดรูปแบบให้อ่านง่าย";
 
       try {
-        // ส่งรูปภาพไปที่ Cloudflare Worker (เปลี่ยน URL เป็น Worker ของคุณ หรือ Endpoint จริง)
-        const response = await fetch('https://calorie-ai.leonis47.workers.dev/analyze', {
-          method: 'POST',
-          body: formData
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: promptText },
+                {
+                  inline_data: {
+                    mime_type: selectedFile.type || "image/jpeg",
+                    data: base64Imagedata
+                  }
+                }
+              ]
+            }]
+          })
         });
 
         const data = await response.json();
-
         document.getElementById('loadingIndicator').style.display = 'none';
         document.getElementById('previewContainer').style.display = 'none';
-        
-        const resultContent = document.getElementById('resultContent');
-        if (data.success) {
-          resultContent.innerHTML = `
-            <p><b>เมนูอาหาร:</b> ${data.menuName || 'อาหารในภาพ'}</p>
-            <p><b>พลังงานรวม:</b> <span style="color:var(--primary); font-size:18px; font-weight:bold;">${data.calories || '0'} kcal</span></p>
-            <hr style="margin: 10px 0; border:0; border-top:1px solid #e2e8f0;">
-            <p><b>รายละเอียดสารอาหาร:</b></p>
-            <p>${data.details ? data.details.replace(/\n/g, '<br>') : 'ไม่มีข้อมูลรายละเอียด'}</p>
-          `;
-        } else {
-          resultContent.innerHTML = `<p style="color: red;">เกิดข้อผิดพลาด: ${data.error || 'ไม่สามารถวิเคราะห์ภาพนี้ได้'}</p>`;
+
+        if (data.error) {
+          alert("เกิดข้อผิดพลาดจาก Gemini: " + data.error.message);
+          document.getElementById('actionButtons').style.display = 'block';
+          document.getElementById('previewContainer').style.display = 'block';
+          return;
         }
+
+        const textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text || "ไม่พบผลลัพธ์จาก AI";
         
+        document.getElementById('resultContent').innerHTML = textOutput.replace(/\n/g, '<br>');
         document.getElementById('resultContainer').style.display = 'block';
 
       } catch (error) {
         document.getElementById('loadingIndicator').style.display = 'none';
         document.getElementById('actionButtons').style.display = 'block';
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์: " + error.message);
+        document.getElementById('previewContainer').style.display = 'block';
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + error.message);
       }
     }
   </script>
