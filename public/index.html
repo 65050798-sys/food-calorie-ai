@@ -62,60 +62,50 @@
       margin-bottom: 24px;
     }
 
-    .upload-box {
-      border: 2px dashed var(--border-color);
-      border-radius: 16px;
-      padding: 30px 20px;
-      background: #fafbfc;
-      cursor: pointer;
-      transition: all 0.3s ease;
+    /* ปุ่มเลือกรูปภาพแบบแยกสไตล์ */
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
       margin-bottom: 20px;
-      position: relative;
     }
 
-    .upload-box:hover {
-      border-color: var(--primary);
-      background: #fffaf7;
-    }
-
-    .upload-icon {
-      font-size: 40px;
-      margin-bottom: 10px;
-    }
-
-    .upload-text {
-      font-size: 15px;
-      font-weight: 600;
+    .action-btn {
+      background-color: #ffffff;
       color: var(--text-main);
-      margin-bottom: 4px;
-    }
-
-    .upload-hint {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    /* ซ่อน input file แท้จริง แต่ให้กดผ่านกล่องได้ */
-    #fileInput {
-      display: none;
-    }
-
-    .btn {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 14px 24px;
+      border: 2px solid var(--border-color);
+      border-radius: 16px;
+      padding: 16px;
       font-size: 16px;
       font-weight: 600;
-      width: 100%;
       cursor: pointer;
-      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+
+    .action-btn:hover {
+      border-color: var(--primary);
+      background-color: #fffaf7;
+    }
+
+    .action-btn.primary {
+      background-color: var(--primary);
+      color: white;
+      border-color: var(--primary);
       box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
     }
 
-    .btn:hover {
+    .action-btn.primary:hover {
       background-color: var(--primary-hover);
+    }
+
+    /* ซ่อน input file แท้จริงไว้ */
+    input[type="file"] {
+      display: none;
     }
 
     /* ส่วนแสดงตัวอย่างรูปภาพที่เลือก */
@@ -126,10 +116,10 @@
 
     #imagePreview {
       max-width: 100%;
-      max-height: 250px;
-      border-radius: 12px;
+      max-height: 280px;
+      border-radius: 16px;
       object-fit: contain;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
     footer {
@@ -145,24 +135,34 @@
   <div class="container">
     <div class="header-icon">🥗</div>
     <h1>FoodLens AI</h1>
-    <p class="subtitle">ถ่ายรูปหรือเลือกรูปอาหาร เพื่อให้ AI ช่วยวิเคราะห์แคลอรีและโภชนาการ</p>
+    <p class="subtitle">เลือกรูปภาพอาหารจากในเครื่อง หรือถ่ายรูปใหม่ เพื่อให้ AI วิเคราะห์แคลอรี</p>
 
-    <!-- พื้นสำหรับคลิกเพื่อเลือกรูป -->
-    <div class="upload-box" onclick="document.getElementById('fileInput').click();">
-      <div class="upload-icon">📷</div>
-      <div class="upload-text">แตะเพื่อเลือกรูปภาพอาหาร</div>
-      <div class="upload-hint">รองรับไฟล์ JPG, PNG, HEIC</div>
+    <!-- ปุ่มเลือกรูปจากคลังภาพ (อัลบั้มในอุปกรณ์) -->
+    <div class="button-group">
+      <button class="action-btn" onclick="document.getElementById('galleryInput').click();">
+        📁 เลือกรูปจากคลังภาพ / อุปกรณ์
+      </button>
+
+      <!-- ปุ่มเปิดกล้องถ่ายรูปโดยตรง -->
+      <button class="action-btn" onclick="document.getElementById('cameraInput').click();">
+        📷 ถ่ายรูปอาหารใหม่
+      </button>
     </div>
 
-    <!-- ฟอร์มเลือกไฟล์จากอุปกรณ์ (เปิดกล้องหรือคลังภาพได้) -->
-    <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="previewImage(event)">
+    <!-- ช่องรับไฟล์ซ่อนไว้ (1 สำหรับเลือกรูปเก่าจากเครื่อง, 1 สำหรับเปิดกล้องถ่าย) -->
+    <input type="file" id="galleryInput" accept="image/*" onchange="previewImage(event)">
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="previewImage(event)">
 
     <!-- ส่วนแสดงรูปที่เลือก -->
     <div id="previewContainer">
       <img id="imagePreview" src="" alt="Preview">
+      <button class="action-btn primary" style="width: 100%; margin-top: 15px;" onclick="analyzeFood()">
+        ✨ เริ่มวิเคราะห์อาหารด้วย AI
+      </button>
+      <button class="action-btn" style="width: 100%; margin-top: 8px; font-size: 14px; padding: 10px;" onclick="resetForm()">
+        🔄 เลือกรูปใหม่
+      </button>
     </div>
-
-    <button class="btn" id="analyzeBtn" style="display: none;" onclick="analyzeFood()">เริ่มวิเคราะห์อาหาร</button>
   </div>
 
   <footer>
@@ -178,16 +178,24 @@
           const preview = document.getElementById('imagePreview');
           preview.src = e.target.result;
           
-          // แสดงพรีวิวและปุ่มวิเคราะห์
+          // ซ่อนปุ่มเลือกรูป แล้วแสดงตัวอย่างรูปกับปุ่มวิเคราะห์แทน
+          document.querySelector('.button-group').style.display = 'none';
           document.getElementById('previewContainer').style.display = 'block';
-          document.getElementById('analyzeBtn').style.display = 'block';
         }
         reader.readAsDataURL(file);
       }
     }
 
+    function resetForm() {
+      // ล้างค่าไฟล์และกลับสู่หน้าเลือกรูป
+      document.getElementById('galleryInput').value = '';
+      document.getElementById('cameraInput').value = '';
+      document.getElementById('previewContainer').style.display = 'none';
+      document.querySelector('.button-group').style.display = 'flex';
+    }
+
     function analyzeFood() {
-      alert("ระบบกำลังส่งรูปภาพให้ AI วิเคราะห์โภชนาการ... (สามารถเชื่อมต่อ API ต่อในขั้นตอนนี้ได้เลยครับ)");
+      alert("ระบบกำลังส่งรูปภาพให้ AI วิเคราะห์โภชนาการ...");
     }
   </script>
 
