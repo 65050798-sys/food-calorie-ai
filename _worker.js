@@ -1,11 +1,9 @@
 export default {
   async fetch(request, env) {
-
     const url = new URL(request.url);
 
-    // API สำหรับวิเคราะห์รูปอาหาร
+    // API วิเคราะห์อาหาร
     if (url.pathname === "/api/analyze" && request.method === "POST") {
-
       try {
         const data = await request.json();
 
@@ -27,12 +25,10 @@ export default {
           "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
           {
             method: "POST",
-
             headers: {
               "Content-Type": "application/json",
               "x-goog-api-key": env.GEMINI_API_KEY
             },
-
             body: JSON.stringify({
               contents: [
                 {
@@ -45,19 +41,19 @@ export default {
                     },
                     {
                       text: `
-คุณเป็น AI วิเคราะห์อาหาร
+วิเคราะห์อาหารจากภาพนี้
 
-ดูรูปอาหารนี้และประเมินข้อมูลต่อไปนี้:
+ให้ประเมิน:
+- ชื่ออาหาร
+- ปริมาณโดยประมาณ
+- calories
+- protein
+- carbohydrates
+- fat
 
-1. ชื่ออาหาร
-2. ปริมาณโดยประมาณ
-3. Calories
-4. Protein
-5. Carbohydrates
-6. Fat
+ถ้ามีอาหารหลายอย่างในภาพ ให้ประเมินรวมกัน
 
-ตอบเป็น JSON เท่านั้น ตามรูปแบบนี้:
-
+ตอบเป็น JSON เท่านั้น:
 {
   "foodName": "ชื่ออาหาร",
   "portion": "ปริมาณโดยประมาณ",
@@ -68,21 +64,17 @@ export default {
 }
 
 หน่วย:
-- calories = kcal
-- protein = g
-- carbs = g
-- fat = g
+calories = kcal
+protein = g
+carbs = g
+fat = g
 
-ถ้าในภาพมีอาหารหลายอย่าง ให้ประเมินรวมทั้งจาน
-
-ค่าทั้งหมดเป็นค่าประมาณจากภาพ
-อย่าอ้างว่าตัวเลขแม่นยำ 100%
+ค่าทั้งหมดเป็นเพียงการประมาณจากภาพ อาจคลาดเคลื่อนได้
                       `
                     }
                   ]
                 }
               ],
-
               generationConfig: {
                 responseMimeType: "application/json"
               }
@@ -90,24 +82,23 @@ export default {
           }
         );
 
-        if (!response.ok) {
-          const errorText = await response.text();
+        const result = await response.json();
 
+        // ถ้า Gemini ส่ง error
+        if (!response.ok) {
           return new Response(
             JSON.stringify({
               error: "Gemini API error",
-              details: errorText
+              details: result
             }),
             {
-              status: 500,
+              status: response.status,
               headers: {
                 "Content-Type": "application/json"
               }
             }
           );
         }
-
-        const result = await response.json();
 
         const text =
           result.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -126,11 +117,30 @@ export default {
           );
         }
 
-        const nutrition = JSON.parse(text);
+        // แปลง JSON จาก AI
+        let nutrition;
+
+        try {
+          nutrition = JSON.parse(text);
+        } catch {
+          return new Response(
+            JSON.stringify({
+              error: "AI ส่งข้อมูลไม่ใช่ JSON",
+              raw: text
+            }),
+            {
+              status: 500,
+              headers: {
+                "Content-Type": "application/json"
+              }
+            }
+          );
+        }
 
         return new Response(
           JSON.stringify(nutrition),
           {
+            status: 200,
             headers: {
               "Content-Type": "application/json"
             }
@@ -138,7 +148,6 @@ export default {
         );
 
       } catch (error) {
-
         return new Response(
           JSON.stringify({
             error: "เกิดข้อผิดพลาดในการวิเคราะห์",
@@ -154,7 +163,7 @@ export default {
       }
     }
 
-    // ถ้าไม่ใช่ API ให้แสดงเว็บไซต์
+    // เว็บไซต์
     return env.ASSETS.fetch(request);
   }
 };
