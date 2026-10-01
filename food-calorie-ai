@@ -257,32 +257,181 @@
   </div>
 
   <script>
-    const foodImage = document.getElementById("foodImage");
-    const preview = document.getElementById("preview");
-    const analyzeBtn = document.getElementById("analyzeBtn");
+  const foodImage = document.getElementById("foodImage");
+  const preview = document.getElementById("preview");
+  const analyzeBtn = document.getElementById("analyzeBtn");
 
-    foodImage.addEventListener("change", function () {
+  const result = document.getElementById("result");
+  const foodName = document.getElementById("foodName");
+  const calories = document.getElementById("calories");
+  const protein = document.getElementById("protein");
+  const carbs = document.getElementById("carbs");
+  const fat = document.getElementById("fat");
 
-      const file = this.files[0];
+  let selectedFile = null;
 
-      if (!file) return;
+  // เมื่อเลือกรูป
+  foodImage.addEventListener("change", function () {
 
-      const imageURL = URL.createObjectURL(file);
+    const file = this.files[0];
 
-      preview.src = imageURL;
-      preview.style.display = "block";
-      analyzeBtn.style.display = "block";
+    if (!file) return;
 
-    });
+    selectedFile = file;
 
-    analyzeBtn.addEventListener("click", function () {
+    const imageURL = URL.createObjectURL(file);
+
+    preview.src = imageURL;
+    preview.style.display = "block";
+
+    analyzeBtn.style.display = "block";
+
+    result.style.display = "none";
+
+  });
+
+
+  // เมื่อกดปุ่มวิเคราะห์
+  analyzeBtn.addEventListener("click", async function () {
+
+    if (!selectedFile) {
+      alert("กรุณาเลือกรูปอาหารก่อน");
+      return;
+    }
+
+    // เปลี่ยนปุ่มเป็นสถานะกำลังวิเคราะห์
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = "🤖 กำลังวิเคราะห์...";
+
+    result.style.display = "block";
+
+    foodName.textContent = "กำลังให้ AI วิเคราะห์...";
+    calories.textContent = "-";
+    protein.textContent = "-";
+    carbs.textContent = "-";
+    fat.textContent = "-";
+
+
+    try {
+
+      // แปลงรูปเป็น Base64
+      const base64Image = await fileToBase64(selectedFile);
+
+      // ส่งข้อมูลไป Cloudflare Worker
+      const response = await fetch("/api/analyze", {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          image: base64Image,
+          mimeType: selectedFile.type
+        })
+
+      });
+
+
+      const data = await response.json();
+
+
+      // ถ้า API มี error
+      if (!response.ok || data.error) {
+
+        console.error(data);
+
+        throw new Error(
+          data.error || "ไม่สามารถวิเคราะห์อาหารได้"
+        );
+
+      }
+
+
+      // แสดงผล AI
+      foodName.textContent =
+        data.foodName || "ไม่ทราบชื่ออาหาร";
+
+      calories.textContent =
+        data.calories !== undefined
+          ? `${data.calories} kcal`
+          : "-";
+
+      protein.textContent =
+        data.protein !== undefined
+          ? `${data.protein} g`
+          : "-";
+
+      carbs.textContent =
+        data.carbs !== undefined
+          ? `${data.carbs} g`
+          : "-";
+
+      fat.textContent =
+        data.fat !== undefined
+          ? `${data.fat} g`
+          : "-";
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      foodName.textContent =
+        "เกิดข้อผิดพลาดในการวิเคราะห์";
+
+      calories.textContent = "-";
+      protein.textContent = "-";
+      carbs.textContent = "-";
+      fat.textContent = "-";
 
       alert(
-        "ตอนนี้หน้าเว็บพร้อมแล้ว! ขั้นต่อไปเราจะเชื่อม AI เพื่อวิเคราะห์รูปอาหาร"
+        "ไม่สามารถวิเคราะห์อาหารได้\n\n" +
+        error.message
       );
 
-    });
-  </script>
+    } finally {
 
+      analyzeBtn.disabled = false;
+      analyzeBtn.textContent = "🤖 วิเคราะห์อาหาร";
+
+    }
+
+  });
+
+
+  // แปลงไฟล์รูปเป็น Base64
+  function fileToBase64(file) {
+
+    return new Promise((resolve, reject) => {
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+
+        // reader.result จะมีรูปแบบ:
+        // data:image/jpeg;base64,XXXXXX
+
+        // เราต้องเอาเฉพาะส่วน Base64
+        const base64 = reader.result.split(",")[1];
+
+        resolve(base64);
+
+      };
+
+      reader.onerror = () => {
+        reject(
+          new Error("ไม่สามารถอ่านไฟล์รูปได้")
+        );
+      };
+
+      reader.readAsDataURL(file);
+
+    });
+
+  }
+
+</script>
 </body>
 </html>
