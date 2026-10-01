@@ -2,7 +2,9 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // API วิเคราะห์อาหาร
+    // =========================
+    // API: วิเคราะห์อาหาร
+    // =========================
     if (url.pathname === "/api/analyze" && request.method === "POST") {
       try {
         const data = await request.json();
@@ -54,6 +56,7 @@ export default {
 ถ้ามีอาหารหลายอย่างในภาพ ให้ประเมินรวมกัน
 
 ตอบเป็น JSON เท่านั้น:
+
 {
   "foodName": "ชื่ออาหาร",
   "portion": "ปริมาณโดยประมาณ",
@@ -69,8 +72,8 @@ protein = g
 carbs = g
 fat = g
 
-ค่าทั้งหมดเป็นเพียงการประมาณจากภาพ อาจคลาดเคลื่อนได้
-                      `
+ค่าทั้งหมดเป็นเพียงการประมาณจากภาพ
+`
                     }
                   ]
                 }
@@ -84,7 +87,6 @@ fat = g
 
         const result = await response.json();
 
-        // ถ้า Gemini ส่ง error
         if (!response.ok) {
           return new Response(
             JSON.stringify({
@@ -117,25 +119,7 @@ fat = g
           );
         }
 
-        // แปลง JSON จาก AI
-        let nutrition;
-
-        try {
-          nutrition = JSON.parse(text);
-        } catch {
-          return new Response(
-            JSON.stringify({
-              error: "AI ส่งข้อมูลไม่ใช่ JSON",
-              raw: text
-            }),
-            {
-              status: 500,
-              headers: {
-                "Content-Type": "application/json"
-              }
-            }
-          );
-        }
+        const nutrition = JSON.parse(text);
 
         return new Response(
           JSON.stringify(nutrition),
@@ -148,6 +132,7 @@ fat = g
         );
 
       } catch (error) {
+
         return new Response(
           JSON.stringify({
             error: "เกิดข้อผิดพลาดในการวิเคราะห์",
@@ -163,7 +148,15 @@ fat = g
       }
     }
 
-    // เว็บไซต์
-    return env.ASSETS.fetch(request);
+    // =========================
+    // หน้าเว็บ
+    // =========================
+
+    const assetRequest = new Request(
+      new URL("/index.html", request.url),
+      request
+    );
+
+    return env.ASSETS.fetch(assetRequest);
   }
 };
