@@ -62,7 +62,6 @@
       margin-bottom: 24px;
     }
 
-    /* ปุ่มเลือกรูปภาพแบบแยกสไตล์ */
     .button-group {
       display: flex;
       flex-direction: column;
@@ -85,6 +84,7 @@
       gap: 10px;
       transition: all 0.2s ease;
       box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+      width: 100%;
     }
 
     .action-btn:hover {
@@ -103,12 +103,10 @@
       background-color: var(--primary-hover);
     }
 
-    /* ซ่อน input file แท้จริงไว้ */
     input[type="file"] {
       display: none;
     }
 
-    /* ส่วนแสดงตัวอย่างรูปภาพที่เลือก */
     #previewContainer {
       display: none;
       margin-bottom: 20px;
@@ -120,6 +118,31 @@
       border-radius: 16px;
       object-fit: contain;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+    }
+
+    /* กล่องแสดงผลลัพธ์จาก AI */
+    #resultContainer {
+      display: none;
+      text-align: left;
+      background: #fffaf7;
+      border: 1px solid #fed7d7;
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    #resultContainer h3 {
+      color: var(--primary);
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    .loading {
+      display: none;
+      margin: 20px 0;
+      font-weight: 600;
+      color: var(--primary);
     }
 
     footer {
@@ -135,32 +158,43 @@
   <div class="container">
     <div class="header-icon">🥗</div>
     <h1>FoodLens AI</h1>
-    <p class="subtitle">เลือกรูปภาพอาหารจากในเครื่อง หรือถ่ายรูปใหม่ เพื่อให้ AI วิเคราะห์แคลอรี</p>
+    <p class="subtitle">ถ่ายรูปหรือเลือกรูปอาหารเพื่อวิเคราะห์แคลอรีและโภชนาการ</p>
 
-    <!-- ปุ่มเลือกรูปจากคลังภาพ (อัลบั้มในอุปกรณ์) -->
-    <div class="button-group">
+    <!-- ปุ่มเลือกรูป -->
+    <div class="button-group" id="selectionGroup">
       <button class="action-btn" onclick="document.getElementById('galleryInput').click();">
         📁 เลือกรูปจากคลังภาพ / อุปกรณ์
       </button>
-
-      <!-- ปุ่มเปิดกล้องถ่ายรูปโดยตรง -->
       <button class="action-btn" onclick="document.getElementById('cameraInput').click();">
         📷 ถ่ายรูปอาหารใหม่
       </button>
     </div>
 
-    <!-- ช่องรับไฟล์ซ่อนไว้ (1 สำหรับเลือกรูปเก่าจากเครื่อง, 1 สำหรับเปิดกล้องถ่าย) -->
-    <input type="file" id="galleryInput" accept="image/*" onchange="previewImage(event)">
-    <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="previewImage(event)">
+    <input type="file" id="galleryInput" accept="image/*" onchange="handleImageSelect(event)">
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleImageSelect(event)">
 
-    <!-- ส่วนแสดงรูปที่เลือก -->
+    <!-- ส่วนแสดงรูปและปุ่มวิเคราะห์ -->
     <div id="previewContainer">
       <img id="imagePreview" src="" alt="Preview">
-      <button class="action-btn primary" style="width: 100%; margin-top: 15px;" onclick="analyzeFood()">
-        ✨ เริ่มวิเคราะห์อาหารด้วย AI
-      </button>
-      <button class="action-btn" style="width: 100%; margin-top: 8px; font-size: 14px; padding: 10px;" onclick="resetForm()">
-        🔄 เลือกรูปใหม่
+      
+      <div id="loadingIndicator" class="loading">⏳ กำลังให้ AI วิเคราะห์สารอาหาร... กรุณารอสักครู่</div>
+
+      <div id="actionButtons">
+        <button class="action-btn primary" onclick="analyzeFood()">
+          ✨ เริ่มวิเคราะห์อาหารด้วย AI
+        </button>
+        <button class="action-btn" style="margin-top: 8px; font-size: 14px; padding: 12px;" onclick="resetForm()">
+          🔄 เลือกรูปใหม่
+        </button>
+      </div>
+    </div>
+
+    <!-- ส่วนแสดงผลลัพธ์ -->
+    <div id="resultContainer">
+      <h3>📊 ผลการวิเคราะห์โภชนาการ</h3>
+      <div id="resultContent" style="font-size: 14px; line-height: 1.6; color: var(--text-main);"></div>
+      <button class="action-btn" style="margin-top: 15px; font-size: 14px; padding: 10px;" onclick="resetForm()">
+        🔍 วิเคราะห์รูปอื่นต่อ
       </button>
     </div>
   </div>
@@ -170,32 +204,79 @@
   </footer>
 
   <script>
-    function previewImage(event) {
+    let selectedFile = null;
+
+    function handleImageSelect(event) {
       const file = event.target.files[0];
       if (file) {
+        selectedFile = file;
         const reader = new FileReader();
         reader.onload = function(e) {
-          const preview = document.getElementById('imagePreview');
-          preview.src = e.target.result;
-          
-          // ซ่อนปุ่มเลือกรูป แล้วแสดงตัวอย่างรูปกับปุ่มวิเคราะห์แทน
-          document.querySelector('.button-group').style.display = 'none';
+          document.getElementById('imagePreview').src = e.target.result;
+          document.getElementById('selectionGroup').style.display = 'none';
           document.getElementById('previewContainer').style.display = 'block';
+          document.getElementById('resultContainer').style.display = 'none';
         }
         reader.readAsDataURL(file);
       }
     }
 
     function resetForm() {
-      // ล้างค่าไฟล์และกลับสู่หน้าเลือกรูป
+      selectedFile = null;
       document.getElementById('galleryInput').value = '';
       document.getElementById('cameraInput').value = '';
       document.getElementById('previewContainer').style.display = 'none';
-      document.querySelector('.button-group').style.display = 'flex';
+      document.getElementById('resultContainer').style.display = 'none';
+      document.getElementById('selectionGroup').style.display = 'flex';
+      document.getElementById('loadingIndicator').style.display = 'none';
+      document.getElementById('actionButtons').style.display = 'block';
     }
 
-    function analyzeFood() {
-      alert("ระบบกำลังส่งรูปภาพให้ AI วิเคราะห์โภชนาการ...");
+    async function analyzeFood() {
+      if (!selectedFile) {
+        alert("กรุณาเลือกรูปภาพก่อนครับ");
+        return;
+      }
+
+      // ซ่อนปุ่มกระทำ และแสดงสถานะกำลังโหลด
+      document.getElementById('actionButtons').style.display = 'none';
+      document.getElementById('loadingIndicator').style.display = 'block';
+
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+
+      try {
+        // ส่งรูปภาพไปที่ Cloudflare Worker (เปลี่ยน URL เป็น Worker ของคุณ หรือ Endpoint จริง)
+        const response = await fetch('https://calorie-ai.leonis47.workers.dev/analyze', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        document.getElementById('loadingIndicator').style.display = 'none';
+        document.getElementById('previewContainer').style.display = 'none';
+        
+        const resultContent = document.getElementById('resultContent');
+        if (data.success) {
+          resultContent.innerHTML = `
+            <p><b>เมนูอาหาร:</b> ${data.menuName || 'อาหารในภาพ'}</p>
+            <p><b>พลังงานรวม:</b> <span style="color:var(--primary); font-size:18px; font-weight:bold;">${data.calories || '0'} kcal</span></p>
+            <hr style="margin: 10px 0; border:0; border-top:1px solid #e2e8f0;">
+            <p><b>รายละเอียดสารอาหาร:</b></p>
+            <p>${data.details ? data.details.replace(/\n/g, '<br>') : 'ไม่มีข้อมูลรายละเอียด'}</p>
+          `;
+        } else {
+          resultContent.innerHTML = `<p style="color: red;">เกิดข้อผิดพลาด: ${data.error || 'ไม่สามารถวิเคราะห์ภาพนี้ได้'}</p>`;
+        }
+        
+        document.getElementById('resultContainer').style.display = 'block';
+
+      } catch (error) {
+        document.getElementById('loadingIndicator').style.display = 'none';
+        document.getElementById('actionButtons').style.display = 'block';
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์: " + error.message);
+      }
     }
   </script>
 
