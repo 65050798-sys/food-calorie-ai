@@ -5,37 +5,37 @@ export default {
     // =========================
     // API: วิเคราะห์อาหาร
     // =========================
-    if (url.pathname === "/api/analyze" && request.method === "POST") {
+    if (
+      url.pathname === "/api/analyze" &&
+      request.method === "POST"
+    ) {
       try {
         const data = await request.json();
 
         if (!data.image) {
-          return new Response(
-            JSON.stringify({ error: "ไม่พบรูปอาหาร" }),
-            {
-              status: 400,
-              headers: {
-                "Content-Type": "application/json; charset=UTF-8"
-              }
-            }
-          );
+          return json({
+            error: "ไม่พบรูปอาหาร"
+          }, 400);
         }
 
         const response = await fetch(
           "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
           {
             method: "POST",
+
             headers: {
               "Content-Type": "application/json",
               "x-goog-api-key": env.GEMINI_API_KEY
             },
+
             body: JSON.stringify({
               contents: [
                 {
                   parts: [
                     {
                       inline_data: {
-                        mime_type: data.mimeType || "image/jpeg",
+                        mime_type:
+                          data.mimeType || "image/jpeg",
                         data: data.image
                       }
                     },
@@ -43,7 +43,7 @@ export default {
                       text: `
 วิเคราะห์อาหารจากภาพนี้
 
-ประเมิน:
+ให้ประเมิน:
 - ชื่ออาหาร
 - ปริมาณโดยประมาณ
 - calories
@@ -51,7 +51,7 @@ export default {
 - carbohydrates
 - fat
 
-ถ้ามีหลายอย่างในภาพ ให้ประเมินรวมกัน
+ถ้ามีอาหารหลายอย่างในภาพ ให้ประเมินรวมกัน
 
 ตอบเป็น JSON เท่านั้น:
 
@@ -69,13 +69,12 @@ calories = kcal
 protein = g
 carbs = g
 fat = g
-
-ค่าทั้งหมดเป็นเพียงการประมาณจากภาพ
 `
                     }
                   ]
                 }
               ],
+
               generationConfig: {
                 responseMimeType: "application/json"
               }
@@ -86,68 +85,125 @@ fat = g
         const result = await response.json();
 
         if (!response.ok) {
-          return new Response(
-            JSON.stringify({
-              error: "Gemini API error",
-              details: result
-            }),
-            {
-              status: response.status,
-              headers: {
-                "Content-Type": "application/json; charset=UTF-8"
-              }
-            }
-          );
+          return json({
+            error: "Gemini API error",
+            details: result
+          }, response.status);
         }
 
         const text =
           result.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (!text) {
-          return new Response(
-            JSON.stringify({
-              error: "AI ไม่ส่งผลลัพธ์กลับมา"
-            }),
-            {
-              status: 500,
-              headers: {
-                "Content-Type": "application/json; charset=UTF-8"
-              }
-            }
-          );
+          return json({
+            error: "AI ไม่ส่งผลลัพธ์กลับมา"
+          }, 500);
         }
 
         const nutrition = JSON.parse(text);
 
-        return new Response(
-          JSON.stringify(nutrition),
-          {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json; charset=UTF-8"
-            }
-          }
-        );
+        return json(nutrition);
 
       } catch (error) {
-        return new Response(
-          JSON.stringify({
-            error: "เกิดข้อผิดพลาดในการวิเคราะห์",
-            details: error.message
-          }),
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/json; charset=UTF-8"
-            }
-          }
-        );
+
+        return json({
+          error: "เกิดข้อผิดพลาดในการวิเคราะห์",
+          details: error.message
+        }, 500);
       }
     }
 
+
     // =========================
-    // Website
+    // WEBSITE
     // =========================
-    return env.ASSETS.fetch(request);
+
+    try {
+      return await env.ASSETS.fetch(request);
+    } catch (error) {
+
+      return new Response(
+        `
+        <!DOCTYPE html>
+        <html lang="th">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport"
+            content="width=device-width,initial-scale=1">
+          <title>FoodLens AI</title>
+        </head>
+
+        <body style="
+          margin:0;
+          min-height:100vh;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          background:#071c17;
+          color:white;
+          font-family:Arial,sans-serif;
+          text-align:center;
+          padding:30px;
+        ">
+
+          <div>
+            <div style="font-size:60px">⚠️</div>
+
+            <h1>เว็บไซต์โหลดไม่ได้</h1>
+
+            <p style="color:#9bb3ab">
+              Cloudflare ไม่สามารถโหลด Static Assets ได้
+            </p>
+
+            <pre style="
+              color:#ff9999;
+              white-space:pre-wrap;
+            ">${escapeHtml(error.message)}</pre>
+          </div>
+
+        </body>
+        </html>
+        `,
+        {
+          status: 500,
+          headers: {
+            "Content-Type":
+              "text/html; charset=UTF-8"
+          }
+        }
+      );
+    }
   }
 };
+
+
+// =========================
+// JSON helper
+// =========================
+
+function json(data, status = 200) {
+  return new Response(
+    JSON.stringify(data),
+    {
+      status,
+      headers: {
+        "Content-Type":
+          "application/json; charset=UTF-8"
+      }
+    }
+  );
+}
+
+
+// =========================
+// HTML escape
+// =========================
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
