@@ -1,6 +1,5 @@
 export default {
   async fetch(request, env, ctx) {
-    // จัดการ CORS ถ้าจำเป็น
     if (request.method === "OPTIONS") {
       return new Response(null, {
         headers: {
@@ -11,16 +10,26 @@ export default {
       });
     }
 
-    if (request.method === "POST" && new URL(request.url).pathname === "/analyze") {
+    const url = new URL(request.url);
+    if (request.method === "POST" && url.pathname === "/analyze") {
       try {
+        if (!env.GEMINI_API_KEY) {
+          return Response.json({ success: false, error: "ยังไม่ได้ตั้งค่า GEMINI_API_KEY ใน Cloudflare Worker" }, {
+            status: 500,
+            headers: { "Access-Control-Allow-Origin": "*" }
+          });
+        }
+
         const formData = await request.formData();
         const imageFile = formData.get("image");
 
         if (!imageFile) {
-          return Response.json({ success: false, error: "ไม่พบไฟล์รูปภาพ" }, { status: 400 });
+          return Response.json({ success: false, error: "ไม่พบไฟล์รูปภาพในคำขอ" }, {
+            status: 400,
+            headers: { "Access-Control-Allow-Origin": "*" }
+          });
         }
 
-        // แปลงรูปภาพเป็น ArrayBuffer -> Base64
         const arrayBuffer = await imageFile.arrayBuffer();
         const bytes = new Uint8Array(arrayBuffer);
         let binary = "";
@@ -30,11 +39,10 @@ export default {
         const base64Image = btoa(binary);
         const mimeType = imageFile.type || "image/jpeg";
 
-        // เรียกใช้งาน Gemini API (ผ่าน Google Generative AI หรือ REST API ตรง)
-        const geminiApiKey = env.GEMINI_API_KEY; // ตั้งค่า Secret ใน Cloudflare Dashboard
         const promptText = "วิเคราะห์รูปภาพอาหารนี้ บอกชื่อเมนู, พลังงานรวม (kcal) โดยประมาณ และรายละเอียดสารอาหาร (โปรตีน, คาร์โบไฮเดรต, ไขมัน) เป็นภาษาไทย จัดรูปแบบให้อ่านง่าย";
 
-        const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+        // เรียกใช้งาน Gemini API (ใช้รุ่น gemini-1.5-flash หรือ gemini-2.5-flash ตามความเหมาะสม)
+        const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -53,24 +61,32 @@ export default {
         });
 
         const aiResult = await apiResponse.json();
-        const textOutput = aiResult.candidates?.[0]?.content?.parts?.[0]?.text || "ไม่สามารถวิเคราะห์ผลลัพธ์ได้";
+        
+        if (aiResult.error) {
+          return Response.json({ success: false, error: "Google Gemini Error: " + aiResult.error.message }, {
+            headers: { "Access-Control-Allow-Origin": "*" }
+          });
+        }
+
+        const textOutput = aiResult.candidates?.[0]?.content?.parts?.[0]?.text || "ไม่สามารถวิเคราะห์ผลลัพธ์ได้จาก AI";
 
         return Response.json({
           success: true,
-          menuName: "เมนูอาหารจากภาพ",
-          calories: "คำนวณจาก AI ด้านล่าง",
+          menuName: "อาหารจากภาพ",
           details: textOutput
         }, {
           headers: { "Access-Control-Allow-Origin": "*" }
         });
 
       } catch (err) {
-        return Response.json({ success: false, error: err.message }, {
+        return Response.json({ success: false, error: "Worker Error: " + err.message }, {
           headers: { "Access-Control-Allow-Origin": "*" }
         });
       }
     }
 
-    return new Response("FoodLens AI Backend Running", { status: 200 });
+    return new Response("FoodLens AI Backend is running!", {
+      headers: { "Access-Control-Allow-Origin": "*" }
+    });
   },
 };
